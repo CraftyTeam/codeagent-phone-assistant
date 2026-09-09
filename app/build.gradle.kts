@@ -1,5 +1,12 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
+fun String.asBuildConfigString(): String = "\"" + replace("\\", "\\\\").replace("\"", "\\\"") + "\""
+
+val modelUrl = providers.gradleProperty("CODEAGENT_MODEL_URL").get()
+val modelFileName = providers.gradleProperty("CODEAGENT_MODEL_FILENAME").get()
+val modelSha256 = providers.gradleProperty("CODEAGENT_MODEL_SHA256").get()
+val modelSizeBytes = providers.gradleProperty("CODEAGENT_MODEL_SIZE_BYTES").get()
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
@@ -13,8 +20,17 @@ android {
         applicationId = "ro.craftyteam.localassistant"
         minSdk = 31
         targetSdk = 36
-        versionCode = 1
-        versionName = "1.0.0"
+        versionCode = 2
+        versionName = "1.1.0"
+
+        buildConfigField("String", "MODEL_URL", modelUrl.asBuildConfigString())
+        buildConfigField("String", "MODEL_FILE_NAME", modelFileName.asBuildConfigString())
+        buildConfigField("String", "MODEL_SHA256", modelSha256.asBuildConfigString())
+        buildConfigField("long", "MODEL_SIZE_BYTES", "${modelSizeBytes}L")
+    }
+
+    buildFeatures {
+        buildConfig = true
     }
 
     buildTypes {
