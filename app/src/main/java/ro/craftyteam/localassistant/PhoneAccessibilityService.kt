@@ -25,7 +25,19 @@ class PhoneAccessibilityService : AccessibilityService() {
         val root = rootInActiveWindow ?: return "No active accessibility window."
         val items = mutableListOf<String>()
         collectNodes(root, items, maxItems)
-        return if (items.isEmpty()) "No readable UI elements." else items.distinct().joinToString("\n").take(1400)
+
+        return buildString {
+            append("FOREGROUND_PACKAGE: ")
+            append(root.packageName?.toString().orEmpty().ifBlank { "unknown" })
+            append("\nFOREGROUND_CLASS: ")
+            append(root.className?.toString().orEmpty().ifBlank { "unknown" })
+            if (items.isEmpty()) {
+                append("\nNo readable UI elements.")
+            } else {
+                append("\n")
+                append(items.distinct().joinToString("\n").take(1800))
+            }
+        }
     }
 
     fun tapText(text: String): Boolean {
