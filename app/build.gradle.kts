@@ -17,11 +17,11 @@ android {
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "ro.craftyteam.localassistant"
+        applicationId = "ro.codeagent.phoneassistant"
         minSdk = 31
         targetSdk = 36
-        versionCode = 2
-        versionName = "1.1.0"
+        versionCode = 3
+        versionName = "1.1.1"
 
         buildConfigField("String", "MODEL_URL", modelUrl.asBuildConfigString())
         buildConfigField("String", "MODEL_FILE_NAME", modelFileName.asBuildConfigString())
