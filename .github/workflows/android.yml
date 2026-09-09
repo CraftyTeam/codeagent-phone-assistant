@@ -5,6 +5,9 @@ on:
     branches: [ "main" ]
   pull_request:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -20,7 +23,15 @@ jobs:
       - uses: android-actions/setup-android@v3
       - run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
       - run: gradle :app:assembleDebug --stacktrace
+      - run: cp app/build/outputs/apk/debug/app-debug.apk codeagent-phone-assistant.apk
       - uses: actions/upload-artifact@v4
         with:
-          name: ctm-local-assistant-debug
-          path: app/build/outputs/apk/debug/app-debug.apk
+          name: codeagent-phone-assistant
+          path: codeagent-phone-assistant.apk
+      - name: Publish GitHub Release
+        if: github.event_name == 'push'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete phone-assistant-latest --cleanup-tag --yes || true
+          gh release create phone-assistant-latest codeagent-phone-assistant.apk --title "CodeAgent Phone Assistant" --notes "Latest installable Android APK." --latest
