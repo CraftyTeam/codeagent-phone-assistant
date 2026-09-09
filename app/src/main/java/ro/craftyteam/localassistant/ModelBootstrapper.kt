@@ -10,6 +10,7 @@ import java.io.IOException
 import java.net.HttpURLConnection
 import java.net.URL
 import java.security.MessageDigest
+import kotlin.math.ceil
 
 class ModelBootstrapper(private val context: Context) {
     class PreparationException(message: String, val retryable: Boolean) : IOException(message)
@@ -22,6 +23,7 @@ class ModelBootstrapper(private val context: Context) {
     suspend fun prepare(onProgress: (Long, Long) -> Unit): Result<File> = withContext(Dispatchers.IO) {
         runCatching {
             modelDir.mkdirs()
+            cleanupOldModels()
 
             if (isTrustedExistingModel()) {
                 onProgress(BuildConfig.MODEL_SIZE_BYTES, BuildConfig.MODEL_SIZE_BYTES)
@@ -34,10 +36,12 @@ class ModelBootstrapper(private val context: Context) {
             }
 
             val remaining = (BuildConfig.MODEL_SIZE_BYTES - partialFile.length()).coerceAtLeast(0L)
-            val reserve = 96L * 1024L * 1024L
-            if (context.filesDir.usableSpace < remaining + reserve) {
+            val reserve = 384L * 1024L * 1024L
+            val required = remaining + reserve
+            if (context.filesDir.usableSpace < required) {
+                val requiredMb = ceil(required / 1024.0 / 1024.0).toLong()
                 throw PreparationException(
-                    "Spațiu insuficient. Eliberează cel puțin 500 MB și încearcă din nou.",
+                    "Spațiu insuficient. Eliberează aproximativ $requiredMb MB și încearcă din nou.",
                     false
                 )
             }
@@ -66,6 +70,15 @@ class ModelBootstrapper(private val context: Context) {
                 .apply()
 
             modelFile
+        }
+    }
+
+    private fun cleanupOldModels() {
+        modelDir.listFiles()?.forEach { file ->
+            if (file == modelFile || file == partialFile) return@forEach
+            if (file.name.endsWith(".litertlm") || file.name.endsWith(".litertlm.part")) {
+                file.delete()
+            }
         }
     }
 
