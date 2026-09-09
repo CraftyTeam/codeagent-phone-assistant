@@ -19,6 +19,8 @@ import java.time.LocalDateTime
 import java.time.ZoneId
 
 class PhoneTools(private val context: Context) : ToolSet {
+    private val appCatalog = AppCatalog(context)
+
     @Tool(description = "Turns the phone flashlight on.")
     fun turnOnFlashlight(): Map<String, String> = setFlashlight(true)
 
@@ -34,31 +36,23 @@ class PhoneTools(private val context: Context) : ToolSet {
     @Tool(description = "Opens the main Android system settings screen.")
     fun openSystemSettings(): Map<String, String> = launch(Intent(Settings.ACTION_SETTINGS))
 
-    @Tool(description = "Opens an installed app by the name the user sees in the launcher.")
+    @Tool(description = "Opens an installed app by its visible launcher name or a close abbreviation.")
     fun openApp(
-        @ToolParam(description = "Visible application name, for example YouTube, Chrome, WhatsApp or Camera.") appName: String
+        @ToolParam(description = "Requested application name.") appName: String
     ): Map<String, String> {
-        val pm = context.packageManager
-        val launcherIntent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
-        val candidates = pm.queryIntentActivities(launcherIntent, PackageManager.MATCH_ALL)
-        val normalized = appName.trim().lowercase()
+        val resolved = appCatalog.resolve(appName)
+            ?: return mapOf("result" to "error", "message" to "Nu am găsit aplicația: $appName")
 
-        val best = candidates.firstOrNull {
-            it.loadLabel(pm).toString().trim().lowercase() == normalized
-        } ?: candidates.firstOrNull {
-            it.loadLabel(pm).toString().trim().lowercase().contains(normalized)
-        } ?: return mapOf("result" to "error", "message" to "App not found: $appName")
-
-        val packageName = best.activityInfo.packageName
-        val intent = pm.getLaunchIntentForPackage(packageName)
-            ?: return mapOf("result" to "error", "message" to "No launch intent for $appName")
+        val intent = context.packageManager.getLaunchIntentForPackage(resolved.packageName)
+            ?: return mapOf("result" to "error", "message" to "Nu pot deschide ${resolved.label}")
 
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         context.startActivity(intent)
 
         return mapOf(
             "result" to "success",
-            "app" to best.loadLabel(pm).toString()
+            "app" to resolved.label,
+            "package" to resolved.packageName
         )
     }
 
