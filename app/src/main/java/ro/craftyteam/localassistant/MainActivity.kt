@@ -33,8 +33,8 @@ import kotlin.math.roundToInt
 class MainActivity : Activity() {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private lateinit var assistantEngine: AssistantEngine
-    private lateinit var directRouter: DirectCommandRouter
     private lateinit var phoneAgent: PhoneAgent
+    private lateinit var orchestrator: ConversationOrchestrator
     private lateinit var bootstrapper: ModelBootstrapper
 
     private lateinit var setupScreen: LinearLayout
@@ -59,9 +59,10 @@ class MainActivity : Activity() {
         setContentView(R.layout.activity_main)
 
         val phoneTools = PhoneTools(applicationContext)
+        val appCatalog = AppCatalog(applicationContext)
         assistantEngine = AssistantEngine(applicationContext)
-        directRouter = DirectCommandRouter(phoneTools)
-        phoneAgent = PhoneAgent(assistantEngine, phoneTools)
+        phoneAgent = PhoneAgent(assistantEngine, phoneTools, appCatalog)
+        orchestrator = ConversationOrchestrator(assistantEngine, phoneAgent, appCatalog)
         bootstrapper = ModelBootstrapper(applicationContext)
 
         setupScreen = findViewById(R.id.setupScreen)
@@ -263,18 +264,12 @@ class MainActivity : Activity() {
 
     private fun executePrompt(prompt: String) {
         addMessage(prompt, true)
-
-        val direct = directRouter.execute(prompt)
-        if (direct != null) {
-            addMessage(direct, false)
-            return
-        }
-
         setWorking(true)
+
         scope.launch {
-            runCatching { phoneAgent.execute(prompt) }
+            runCatching { orchestrator.handle(prompt) }
                 .onSuccess { addMessage(it, false) }
-                .onFailure { addMessage("Nu am reușit să execut comanda. Încearcă din nou.", false) }
+                .onFailure { addMessage("Nu am reușit să procesez cererea. Încearcă din nou.", false) }
             setWorking(false)
         }
     }
