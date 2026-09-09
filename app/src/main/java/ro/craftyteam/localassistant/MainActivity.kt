@@ -28,13 +28,13 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import java.io.File
 import kotlin.math.roundToInt
 
 class MainActivity : Activity() {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private lateinit var assistantEngine: AssistantEngine
     private lateinit var directRouter: DirectCommandRouter
+    private lateinit var phoneAgent: PhoneAgent
     private lateinit var bootstrapper: ModelBootstrapper
 
     private lateinit var setupScreen: LinearLayout
@@ -58,8 +58,10 @@ class MainActivity : Activity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        val phoneTools = PhoneTools(applicationContext)
         assistantEngine = AssistantEngine(applicationContext)
-        directRouter = DirectCommandRouter(PhoneTools(applicationContext))
+        directRouter = DirectCommandRouter(phoneTools)
+        phoneAgent = PhoneAgent(assistantEngine, phoneTools)
         bootstrapper = ModelBootstrapper(applicationContext)
 
         setupScreen = findViewById(R.id.setupScreen)
@@ -270,7 +272,7 @@ class MainActivity : Activity() {
 
         setWorking(true)
         scope.launch {
-            runCatching { assistantEngine.execute(prompt) }
+            runCatching { phoneAgent.execute(prompt) }
                 .onSuccess { addMessage(it, false) }
                 .onFailure { addMessage("Nu am reușit să execut comanda. Încearcă din nou.", false) }
             setWorking(false)
