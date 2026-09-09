@@ -1,16 +1,16 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
+plugins {
+    id("com.android.application")
+    id("org.jetbrains.kotlin.android")
+}
+
 fun String.asBuildConfigString(): String = "\"" + replace("\\", "\\\\").replace("\"", "\\\"") + "\""
 
 val modelUrl = providers.gradleProperty("CODEAGENT_MODEL_URL").get()
 val modelFileName = providers.gradleProperty("CODEAGENT_MODEL_FILENAME").get()
 val modelSha256 = providers.gradleProperty("CODEAGENT_MODEL_SHA256").get()
 val modelSizeBytes = providers.gradleProperty("CODEAGENT_MODEL_SIZE_BYTES").get()
-
-plugins {
-    id("com.android.application")
-    id("org.jetbrains.kotlin.android")
-}
 
 android {
     namespace = "ro.craftyteam.localassistant"
