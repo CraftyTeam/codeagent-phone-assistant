@@ -56,7 +56,7 @@ class AssistantEngine(private val context: Context) {
     suspend fun execute(prompt: String): String = withContext(Dispatchers.IO) {
         val activeConversation = conversation ?: return@withContext "Agentul nu este încă pregătit."
         val response = activeConversation.sendMessage(prompt)
-        response.text.trim().ifBlank { "Gata." }
+        response.toString().trim().ifBlank { "Gata." }
     }
 
     fun isReady(): Boolean = conversation != null
