@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">CTM Local Assistant</string>
+    <string name="accessibility_service_description">Allows CTM Local Assistant to inspect and operate the visible Android interface when you explicitly ask it to.</string>
+</resources>
