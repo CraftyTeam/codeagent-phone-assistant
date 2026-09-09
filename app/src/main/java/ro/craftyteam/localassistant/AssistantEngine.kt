@@ -34,16 +34,16 @@ class AssistantEngine(private val context: Context) {
             val newConversation = newEngine.createConversation(
                 ConversationConfig(
                     systemInstruction = Contents.of(
-                        "You are a local Android phone assistant. The user may write Romanian or English. " +
+                        "You are CodeAgent, a local Android phone assistant. The user may write Romanian or English. " +
                             "Use tools to actually perform requested actions. Never claim an action succeeded unless a tool returned success. " +
                             "For multi-step UI tasks, inspect the visible screen, tap visible text, type text and scroll as needed. " +
-                            "Keep replies very short."
+                            "Keep final replies short, natural and useful."
                     ),
                     tools = listOf(tool(PhoneTools(context))),
                     samplerConfig = SamplerConfig(
-                        topK = 64,
-                        topP = 0.95,
-                        temperature = 0.0
+                        topK = 40,
+                        topP = 0.9,
+                        temperature = 0.1
                     )
                 )
             )
@@ -54,9 +54,9 @@ class AssistantEngine(private val context: Context) {
     }
 
     suspend fun execute(prompt: String): String = withContext(Dispatchers.IO) {
-        val activeConversation = conversation ?: return@withContext "Modelul nu este încărcat."
+        val activeConversation = conversation ?: return@withContext "Agentul nu este încă pregătit."
         val response = activeConversation.sendMessage(prompt)
-        response.toString().ifBlank { "Acțiunea a fost procesată." }
+        response.text.trim().ifBlank { "Gata." }
     }
 
     fun isReady(): Boolean = conversation != null
