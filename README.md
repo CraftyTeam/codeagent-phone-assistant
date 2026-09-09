@@ -1,11 +1,33 @@
-# CTM Local Assistant
+# CodeAgent Phone Assistant
 
-Android assistant care rulează LLM-ul local și poate executa acțiuni pe telefon prin Android APIs și AccessibilityService.
+Android assistant local pentru utilizator final. Se instalează ca APK, își pregătește automat motorul local la prima pornire și apoi poate executa acțiuni pe telefon prin Android APIs și serviciul de control al interfeței.
+
+## Experiența utilizatorului
+
+1. Instalează APK-ul.
+2. Deschide CodeAgent.
+3. La prima pornire, aplicația descarcă automat fișierele necesare și afișează progresul. Descărcarea poate fi reluată dacă este întreruptă.
+4. CodeAgent verifică integritatea fișierelor înainte să le folosească.
+5. Android cere o singură dată permisiunea necesară pentru controlul interfeței; onboarding-ul explică exact ce trebuie activat.
+6. După configurare, utilizatorul intră direct în interfața de chat. Nu există selector de model, import manual sau buton tehnic pentru Accessibility.
+
+## Motor local
+
+Aplicația folosește LiteRT-LM 0.16.0 și descarcă automat o variantă Qwen3 0.6B INT4 optimizată pentru execuție locală pe telefon:
+
+- model: `Qwen3-0.6B`
+- format: `.litertlm`
+- cuantizare: INT4
+- dimensiune: aproximativ 331 MB
+- licență: Apache-2.0
+- repository model: `litert-community/Qwen3-0.6B-int4`
+
+URL-ul, numele fișierului, dimensiunea și SHA-256 sunt configurabile din `gradle.properties`. Aplicația nu depinde de un model gated și utilizatorul nu are nevoie de cont Hugging Face.
 
 ## Ce poate face
 
-- Function calling local cu LiteRT-LM
-- lanterna on/off
+- function/tool calling local
+- lanternă on/off
 - volum media
 - deschidere aplicații
 - Wi-Fi / Bluetooth / Settings
@@ -14,79 +36,33 @@ Android assistant care rulează LLM-ul local și poate executa acțiuni pe telef
 - email composer
 - creare contact
 - creare eveniment calendar
-- inspectarea UI-ului curent prin AccessibilityService
+- inspectarea UI-ului curent
 - tap pe text vizibil
 - scriere în câmpuri editabile
 - scroll
 - Back / Home / Recents / Notifications
-- rutare directă pentru câteva comenzi românești uzuale, fără inferență LLM
+- rutare directă pentru comenzi românești uzuale
 
 ## Cerințe
 
-- Android 12+ (API 31+)
+- Android 12+ / API 31+
 - recomandat minimum 6 GB RAM
-- Android Studio recent / AGP 8.13.2
-- JDK 17
-- Android SDK 36
+- aproximativ 500 MB spațiu liber la prima configurare
 
-## Model recomandat
+## Build
 
-`litert-community/functiongemma-270m-ft-mobile-actions`
+GitHub Actions construiește automat APK-ul la fiecare modificare de cod pe `main` și publică ultima versiune ca GitHub Release.
 
-Fișierul folosit de Google AI Edge Gallery pentru Mobile Actions este:
+APK direct:
 
-`mobile_actions_q8_ekv1024.litertlm`
-
-Modelul este gated de licența Gemma pe Hugging Face. Trebuie să accepți licența și să descarci fișierul în telefon. Modelul nu este inclus în repo sau APK.
-
-Pagina modelului:
-
-https://huggingface.co/litert-community/functiongemma-270m-ft-mobile-actions
-
-## Instalare
-
-1. Deschide proiectul în Android Studio.
-2. Lasă Gradle Sync să descarce dependențele.
-3. Conectează telefonul Android cu USB debugging sau generează APK-ul debug.
-4. Build > Build APK(s).
-5. Instalează APK-ul pe telefon.
-6. Pornește aplicația și acordă permisiunea Camera pentru lanternă.
-7. Apasă `Accessibility` și activează `CTM Local Assistant`.
-8. Apasă `Import model` și selectează `mobile_actions_q8_ekv1024.litertlm`.
-9. Așteaptă statusul `Model local activ`.
-
-## Build din terminal
-
-Dacă ai Gradle 8.13 instalat:
-
-```bash
-gradle :app:assembleDebug
-```
-
-APK-ul va fi în:
-
-`app/build/outputs/apk/debug/app-debug.apk`
-
-GitHub Actions construiește automat APK-ul ca artifact la fiecare push pe `main`.
-
-## Exemple
-
-- `aprinde lanterna`
-- `deschide YouTube`
-- `pune volumul la 30%`
-- `deschide setările Wi-Fi`
-- `arată Piața Unirii Cluj pe hartă`
-- `deschide Chrome și apasă Continue`
-- `apasă Accept`
-- `scrie test@example.com în câmpul curent`
-- `scroll jos`
+https://github.com/CraftyTeam/codeagent-phone-assistant/releases/download/phone-assistant-latest/codeagent-phone-assistant.apk
 
 ## Arhitectură
 
-`MainActivity -> DirectCommandRouter -> AssistantEngine -> LiteRT-LM -> PhoneTools -> Android APIs / AccessibilityService`
+`MainActivity -> ModelBootstrapper -> AssistantEngine -> LiteRT-LM -> PhoneTools -> Android APIs / PhoneAccessibilityService`
 
-Inference-ul LLM rămâne local. Acțiunile care deschid servicii online, de exemplu Maps, email sau aplicații web, pot necesita evident internet din partea aplicației țintă.
+Modelul și conversația rulează local. Internetul este necesar la prima pornire pentru descărcarea fișierelor și ulterior doar dacă acțiunea cerută deschide un serviciu online.
 
-## Note de securitate
+## Securitate
 
-AccessibilityService poate controla UI-ul altor aplicații. Activează-l doar pe telefonul tău și numai dacă accepți acest nivel de acces. Acțiunile SMS și apel sunt implementate cu composer/dialer, nu cu trimitere sau apel silențios.
+Serviciul de control poate vedea și opera interfața altor aplicații după ce utilizatorul îl activează explicit în Android. Acțiunile SMS și apel rămân în composer/dialer și nu sunt trimise sau inițiate silențios.
