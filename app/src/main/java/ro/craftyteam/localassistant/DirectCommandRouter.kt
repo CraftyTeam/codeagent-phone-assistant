@@ -6,6 +6,10 @@ class DirectCommandRouter(private val tools: PhoneTools) {
     fun execute(command: String): String? {
         val normalized = normalize(command)
 
+        if (isMultiStep(normalized)) {
+            return null
+        }
+
         if (normalized.contains("aprinde lanterna") || normalized.contains("porneste lanterna")) {
             return result(tools.turnOnFlashlight())
         }
@@ -55,6 +59,11 @@ class DirectCommandRouter(private val tools: PhoneTools) {
         }
 
         return null
+    }
+
+    private fun isMultiStep(command: String): Boolean {
+        if (command.contains(',') || command.contains(';')) return true
+        return Regex("\\b(si|apoi|dupa aceea|dupa care|and|then)\\b").containsMatchIn(command)
     }
 
     private fun result(map: Map<String, String>): String {
